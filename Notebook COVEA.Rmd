@@ -1,0 +1,281 @@
+---
+title: "Projet COVEA"
+---
+
+```{r}
+rm(list = ls())
+library(dplyr)
+library(ggplot2)
+library(esquisse)
+library(lubridate)
+```
+
+```{r}
+# lecture des données
+df <- read.csv("C:/Users/basti/Desktop/Master 2/Semestre 2/Analyse multivariée/Projet COVEA/df1.csv", sep = ";")
+#str(df) 
+#View(df)
+```
+
+\# codage variable : mat_murs
+
+\# one-hot encoding variable non ordinal
+
+```{r}
+# Pour les régions
+BR = c(22,29,35,56)
+ARA = c(1,3,7,15,26,38,42,43,63,69,73,74)
+CO = c('2A','2B')
+PL = c(44,49,72,85)
+BFC = c(21,25,39,58,70,71,89,90)
+NO = c(14,27,50,61,76)
+GE = c(8,10,51,52,54,55,57,67,68,88)
+IdF = c(75,77,78,91,92,93,94,95)
+PACA = c(4,5,6,13,83,84)
+CVL= c(28,36,37,41,18,45)
+OCC = c(9,11,12,30,31,32,34,46,48,65,66,81,82)
+HDF = c(2,59,60,62,80)
+NAq = c(16,17,19,23,24,33,40,47,64,79,86,87)
+REGION = c(BR,ARA,CO,PL,BFC,NO,GE,IdF,PACA,CVL,OCC,HDF,NAq)
+# Pour les murs
+indetermine = 0
+pierre = c(1,10:19)
+meuliere = c(2,20:29)
+beton = c(3, 30:39)
+brique = c(4,40:49)
+agg = c(5,50:59)
+bois = c(6,60:69)
+autres = c(9, 90:99)
+
+# Pour la toiture
+ardoise = c(2,20:29)
+beton_t = c(4,40:49)
+tuiles = c(1,10:19)
+zinc = c(3,30:39)
+```
+
+```{r}
+REGION <- as.numeric(REGION)
+sort(REGION)
+```
+
+```{r}
+df1 = df %>% 
+  mutate(value = 1) %>% 
+  mutate(anciennete = 2022 - anne_construction)
+  mutate(region = case_when(region %in% BR ~ "BR",
+                           region %in% ARA ~ "ARA",
+                           region %in% CO ~ "CO",
+                           region %in% PL ~ "PL",
+                           region %in% BFC  ~ "BFC",
+                           region %in% NO  ~ "NO",
+                           region %in% GE ~ " GE",
+                           region %in% IdF ~ "IdF",
+                           region %in% PACA  ~ "PACA",
+                           region %in% CVL  ~ "CVL",
+                           region %in% OCC ~ " OCC",
+                           region %in% HDF  ~ "HDF",
+                           region %in% NAq  ~ "NA")) %>%
+  mutate(mat_m = case_when(mat_murs %in% autres ~ "autre",
+                           mat_murs %in% agg ~ "agg",
+                           mat_murs %in% beton ~ "beton",
+                           mat_murs %in% bois ~ "bois",
+                           mat_murs %in% brique  ~ "brique",
+                           mat_murs %in% meuliere  ~ "meuliere",
+                           mat_murs %in% pierre ~ " pierre",
+                           mat_murs %in% indetermine ~ "ind")) %>% 
+  mutate(mat_t = case_when(mat_toits %in% autres ~ "autre",
+                           mat_toits %in% ardoise ~ "ardoise",
+                           mat_toits %in% tuiles ~ "tuile",
+                           mat_toits %in% beton_t ~ "beton",
+                           mat_toits %in% zinc ~ "zinc",
+                           mat_toits %in% indetermine ~ "ind"))
+#View(df1)
+```
+
+```{r}
+# graphique répartiton Nb pieces vs matériaux_murs
+ggplot(df1, aes(fill = mat_m, y = value, x = NbPieces)) + 
+  geom_bar(position = "fill", stat = "identity")
+
+ggplot(df1, aes(fill = mat_t, y = value, x = NbPieces)) + 
+  geom_bar(position = "fill", stat = "identity")
+```
+
+```{r}
+# construction dataframe pour tests d'indépendance (Chi 2)
+df2 = df %>% 
+  mutate(mat_autre = ifelse(mat_murs %in% autres, 1 , 0)) %>% 
+  mutate(mat_agg = ifelse(mat_murs %in% agg, 1 , 0)) %>% 
+  mutate(mat_beton = ifelse(mat_murs %in% beton, 1 , 0)) %>% 
+  mutate(mat_bois = ifelse(mat_murs %in% bois, 1 , 0)) %>% 
+  mutate(mat_brique = ifelse(mat_murs %in% brique, 1 , 0)) %>% 
+  mutate(mat_meuliere = ifelse(mat_murs %in% meuliere, 1 , 0)) %>% 
+  mutate(mat_pierre = ifelse(mat_murs %in% pierre, 1 , 0)) %>% 
+  mutate(mat_ind = ifelse(mat_murs %in% indetermine, 1 , 0)) 
+#View(df2)
+```
+
+```{r}
+# fréquence des modalités
+# attention aux modalités rares (regroupeemt si besoin)
+df2 %>% 
+  select(mat_autre:mat_pierre) %>% 
+  summarise_all(sum)/nrow(df2)*100
+```
+
+```{r}
+# fréquence variable à expliquer (qualitative ordinale)
+# attention aux modalités rares (regroupement si besoin en conservant l'ordre)
+table(df2$NbPieces)/nrow(df2)*100
+```
+
+```{r}
+# tableau de contingence
+str(df1)
+cntg = table(df1$mat_m, df1$NbPieces) # tableau de contingence
+round(100*prop.table(cntg),2)
+
+rowSums(cntg) # profils lignes
+colSums(cntg) # profils colonnes
+```
+
+```{r}
+# test du Chi-2
+cntg
+chisq.test(cntg)
+```
+
+```{r}
+# visualisation tableau de contingence
+library(gplots)
+balloonplot(cntg)
+```
+
+Autres graphiques
+
+```{r}
+# treemap
+library(treemap)
+
+treemap(df1,
+        index = "mat_m",
+        vSize = "surface_bati_dur",
+        type = "index"
+)
+
+treemap(df1,
+        index = c("NbPieces", "mat_m"),
+        vSize = "surface_bati_dur",
+        type = "index",
+        border.lwds = c(4,2) 
+)
+
+treemap(df1,
+        index = c("NbPieces", "mat_t"),
+        vSize = "surface_bati_dur",
+        type = "index",
+        border.lwds = c(4,2) 
+)
+```
+
+```{r}
+# vtree 
+library(vtree)
+vtree(df1, "NbPieces")
+vtree(df1, "NbPieces mat_m", sameline = TRUE, prunesmaller = 200)
+
+# histogramme empilé
+ggplot(df1, aes(fill = NbPieces, y = value, x = mat_m)) + 
+  geom_bar(position = "fill", stat = "identity")
+
+ggplot(df1, aes(fill = mat_m, y = value, x = NbPieces)) + 
+  geom_bar(position = "fill", stat = "identity")
+
+ggplot(df1, aes(fill = NbPieces, y = value, x = GR)) + 
+  geom_bar(position = "fill", stat = "identity")
+
+```
+
+```{r}
+#esquisser(df1)
+```
+
+Variables étonnantes
+
+```{r}
+subset(df1, subset = (etages == 4 & NbPieces == '3p'))
+(df1$etages == 4 & df1$NbPieces == 3)
+```
+
+```{r}
+# histogramme des nombres de piéces
+ggplot(df1, aes(x = NbPieces)) +  
+  geom_bar(aes(y = (..count..)/sum(..count..))) 
+```
+
+```{r}
+# cart
+library(rpart)
+library(rpart.plot)
+
+df_cart = df1 %>% 
+  filter(NbPieces != "2p et moins")
+
+tree = rpart(NbPieces~., method = "class", data = df_cart[,-c(1,2,6,7,15)], 
+parms = list(prior = c(0, 0.2, 0.2, 0.6))) # parms pour influencer la modélisation sur certaines modalités
+summary(tree)
+plot(tree)
+rpart.plot(tree,extra = 1, type = 4,tweak = 1.0)
+```
+
+```{r}
+#selection taille arbre
+tree$cptable
+plotcp(tree)
+best_tree = prune(tree, cp = 0.01)
+rpart.plot(best_tree,tweak = 0.9)
+
+#performance arbre
+pred =  predict(best_tree, data = df_cart[,-c(1,2,6,7,15)],type = "class")
+mc = table(df_cart$NbPieces,pred)
+erreur = 1-sum(diag(mc))/sum(mc)
+erreur
+mc
+```
+
+```{r}
+# random forest
+library(randomForest)
+df_rf = na.omit(df1) %>% # suppression valeurs manquantes
+  arrange(NbPieces) # tri selon Nb Piéces
+df_rf$NbPieces <- as.factor(df_rf$NbPieces)
+covea.rf <- randomForest(NbPieces ~. , df_rf[,3:17], proximity = TRUE, type = "class")
+
+# scores d'anomalies
+plot(outlier(covea.rf), type = "h",
+     col = c("red", "green", "blue", "pink", "black")[as.numeric(df_rf$NbPieces)],
+     main  = "Scores d'anomalies")
+grid()
+
+a = outlier(covea.rf)
+df_rf$score_prox = a
+View(df_rf)
+
+b = df_rf$NbPieces
+abline(10, 0)
+str(df_rf)
+```
+
+```{r}
+library(FactoMineR)
+
+var_quant <- c('anciennete', 'hauteur', 'etage', 'nb_angles', 'surface_bati_dur', 'surface_bati_leger',
+               'surface_parcelle', 'nb_bati_dur', 'nb_bati_leger')
+var_qual <- c('GR', 'mat_m', 'mat_t')
+
+res.mca <- MCA(df_rf, 
+               quanti.sup = var_quant, # Variables quantitatives supplémentaires
+               quali.sup = var_qual,  # Variables qualitatives supplémentaires
+               graph = FALSE)
+```

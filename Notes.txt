@@ -1,0 +1,58 @@
+Projet COVEA
+
+Déterminer le nombre  de pièces :
+
+Comment aborder le problème ? 
+
+-> Complet et opérationnel
+
+
+Difficulté des variables quantitatives :
+Surface
+MissForest pour remplir les valeurs manquantes
+
+Distance pour des variables qualitatives dummifiée : manhattan
+
+Breyman pour les anomalies
+______________________________________________________________
+beaucoup de 0 dans les annees de construction
+
+Région
+mat_mur
+mat_toit
+Justifier pourquoi on supprime une variable
+significatif ou pas (test de chi2)
+nb_angles
+surface
+nb pieces
+
+Faire de la segmentation, et faire un modele sur chaque segment
+
+
+Clara pour clusteriser 
+
+Faire des insights, des petites règles qui permettent de comprendre 
+Faire une ACM pour voir quelles données se distinguent
+
+
+Fonction "cut" pour regrouper les variables 
+
+mettre en log certaines variables numériques pour les homogénéiser 
+fonction de répartition nb de batiments légers -> aucun intérêt
+
+normaliser les données pour un réseau de neurone
+Gretl pour la régression
+
+Projet : 
+ - Data (nettoyage, graphiques)
+ - Méthodologie (FAMD -> tirer des infos (insights sur le Bretagne et les toits par exemple)
+                 RF -> importance des variables
+                 NN -> modélisation à partir des paramètres retenus avant
+ - Résultats
+ - Conclusion et perspectives
+
+
+NLP RegEx
+NLTK sur python
+Loughran McDonald
+
